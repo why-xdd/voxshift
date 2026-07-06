@@ -1,3 +1,5 @@
 __pycache__/
 *.pyc
 .venv/
+.omc/
+.voxshift_presets.json
