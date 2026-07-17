@@ -4,9 +4,9 @@
 
 ### Real-time voice changer for Windows — in Python
 
-Turn your microphone into a **woman, kid, robot, demon, alien** or your own custom voice,
-live, with ~35 ms latency. A full studio effect chain, 17 presets, global hotkeys and
-recording — in two small files.
+Turn your microphone into a **woman, kid, robot, demon, alien, Minion** or your own
+custom voice — live, with ~35 ms latency. A full studio effect chain, **46 character
+presets** in categories, global hotkeys, recording, and one-click virtual-mic setup.
 
 ![Python](https://img.shields.io/badge/python-3.10+-3776AB?logo=python&logoColor=white)
 ![DSP](https://img.shields.io/badge/DSP-NumPy%20%2F%20SciPy-013243?logo=scipy&logoColor=white)
@@ -22,135 +22,83 @@ recording — in two small files.
 
 | | |
 |---|---|
-| 🎚️ **Pitch shift −24…+24 st** | STFT phase vocoder with 8× overlap + rigid phase-locking — smooth, no chipmunk-tempo artifacts |
+| 🎭 **46 character presets** | Human · Cartoon · Sci-Fi · Horror · Famous · FX — browse by category, one click to switch |
+| 🎚️ **Pitch −24…+24 st** | STFT phase vocoder, 8× overlap + rigid phase-locking for a smoother, less "robotic" sound |
 | 🧑‍🤝‍🧑 **Independent formant shift** | Change timbre / "gender" separately from pitch, tuned to real vocal-tract acoustics |
-| 🎛️ **Full effect chain** | 3-band EQ · distortion · bitcrusher · ring mod · tremolo · vibrato · echo · reverb |
-| 🔇 **Noise gate** | Cuts background hiss so it isn't amplified into the changed voice |
-| 🎭 **17 presets** | Man, Woman, Kid, Baby, Squeaky, Helium, Robot, Cyborg, Demon, Alien, Ghost, Telephone, Radio, Cave… + save your own |
+| 🎛️ **Full effect chain** | 3-band EQ · distortion · bitcrusher · ring mod · tremolo · vibrato · echo · reverb · noise gate |
+| 🔌 **One-click virtual mic** | Installs the VB-Cable driver for you so the voice works as a mic in Discord/games out of the box |
 | ⌨️ **Global hotkeys** | Switch presets & mute without leaving your game or call |
-| 🔴 **Record to WAV** | Capture the changed voice even without a virtual cable |
-| ⚡ **Light** | The whole chain runs at ~10 % of the real-time CPU budget |
-
----
-
-## 📸 The interface
-
-```
-┌────────────────────────────────────────────┐
-│                 VoxShift                     │
-│  Microphone  [ your mic            ▼]        │
-│  Output      [ headphones / cable  ▼]        │
-│  Preset  [👩 Woman ▼]   [name…] 💾 Save 🗑    │
-│ ┌ Voice ─ Tone ─ Modulation ─ Space ───────┐ │
-│ │ Pitch    ──●────────────  +7.0 st        │ │
-│ │ Formant  ────●──────────  +3.0 st        │ │
-│ │ ☑ Preserve formants                      │ │
-│ │ Noise gate ●───────────   0.000          │ │
-│ │ Volume   ──────●────────  100%           │ │
-│ └──────────────────────────────────────────┘ │
-│  In  ▮▮▮▮▮▮▯▯▯▯▯▯▯▯▯                          │
-│  Out ▮▮▮▮▮▮▮▮▯▯▯▯▯▯▯                          │
-│  [ ▶  Start ]                    [ ● Rec ]    │
-└────────────────────────────────────────────┘
-```
+| 🔴 **Record to WAV** | Capture the changed voice, with or without a cable |
+| 🧠 **AI path (planned)** | Scaffold in place for neural voice conversion (RVC) — the truly natural / undetectable route |
 
 ---
 
 ## 🚀 Installation
 
 ### 1. Install Python 3.10+
-
-Download from [python.org](https://www.python.org/downloads/) and **tick "Add Python to PATH"** during setup.
-Check it in a terminal (PowerShell):
-
-```powershell
-python --version
-```
+Download from [python.org](https://www.python.org/downloads/) and **tick "Add Python to PATH"**.
 
 ### 2. Get VoxShift
-
 ```powershell
 git clone https://github.com/why-xdd/voxshift.git
 cd voxshift
 ```
-
 (or download the ZIP from GitHub and extract it)
 
-### 3. Install the dependencies
+### 3. One-click setup
+Double-click **`setup.bat`** — it installs the dependencies **and** sets up the virtual
+microphone driver (VB-Cable). Accept the UAC prompt, click *Install Driver*, then reboot.
 
-```powershell
-pip install -r requirements.txt
-```
+<sub>Prefer manual? `pip install -r requirements.txt`, then optionally set up the mic driver from inside the app.</sub>
 
-### 4. Run it
-
-```powershell
-python voxshift.py
-```
-
-or just double-click **`run.bat`** (it installs the requirements and launches the app).
-
-That's it — pick your microphone, choose your headphones as the output, hit **Start** and talk. 🎉
+### 4. Run
+Double-click **`run.bat`** (or `python voxshift.py`). Pick your mic, choose an output, hit **Start**. 🎉
 
 ---
 
 ## 🎧 Using it as a microphone in Discord / games
 
-> **The honest truth:** to make *any* program's audio show up as a **microphone** in Discord or a game, Windows needs a **virtual audio cable** (a kernel-level loopback driver). This isn't a VoxShift limitation — every "real" voice changer (Voicemod, Clownfish, MorphVOX…) installs its own such driver under the hood.
+To make *any* program's audio appear as a **microphone**, Windows needs a **virtual audio cable** (a kernel-level loopback driver). VoxShift can install one for you:
 
-**Without a cable** you can still:
-- 🎧 **Monitor** the changed voice through your headphones (pick them as the output)
-- 🔴 **Record** it to a `.wav` with the `● Rec` button
+- **Automatic:** run `setup.bat`, **or** click **🎚 Set up virtual mic (VB-Cable)** inside the app. It downloads and launches the official installer — accept UAC, click *Install Driver*, reboot.
+- Then in VoxShift set **output = `CABLE Input`**, and in Discord/the game set the **microphone = `CABLE Output`**.
 
-**To route it into Discord / games:**
+Without a cable you can still **monitor** through your headphones and **record** to a `.wav`.
 
-1. Install the free [**VB-Cable**](https://vb-audio.com/Cable/)
-2. In VoxShift: **input** = your real mic, **output** = `CABLE Input`
-3. In Discord (or the game): **microphone** = `CABLE Output`
+> ### 😱 "Installing the cable killed my microphone!"
+> Common, and **not a fault**. The installer sets `CABLE Output` as your *default* recording device, so apps that use the default mic hear silence. **Fix:** *Settings → System → Sound* → set your **real microphone** back as the default input, and only pick `CABLE Output` *inside Discord*. Your mic keeps working everywhere else.
 
-> ### 😱 "Installing VB-Cable killed my microphone!"
-> Common, and **not a real fault**. The installer sets `CABLE Output` as your *default* recording device, so apps that use the default mic now hear silence (nothing feeds the cable unless VoxShift is running). **Fix:** open **Settings → System → Sound**, set your **real microphone** back as the default input, and only pick `CABLE Output` *inside Discord*. Your mic then keeps working everywhere else.
-
-VoxShift shows a green/orange line under the output picker telling you whether a virtual cable was detected.
+VoxShift shows a green/orange line under the output picker telling you whether a cable was detected.
 
 ---
 
 ## 🎭 Presets
 
-| Preset | Pitch | Formant | Character |
-|---|:---:|:---:|---|
-| 🎤 Normal | 0 | 0 | passthrough |
-| 👨 Man | −4 | −3 | deeper, chestier |
-| 👩 Woman | +7 | +3 | female F0 + female vocal tract (1.2×) |
-| 🧒 Kid | +10 | +5 | child tract (1.33×) |
-| 👶 Baby | +12 | +8 | tiny tract (1.6×) |
-| 🐭 Squeaky | +16 | +8 | very high & thin |
-| 🎈 Helium | +4 | +12 | physically-accurate helium |
-| 🎩 Deep | −5 | −2 | rich low voice |
-| 🐿️ Chipmunk | +9 | — | classic (formants move too) |
-| 🤖 Robot | 0 | 0 | ring mod + bitcrush |
-| 🦾 Cyborg | −2 | 0 | ring mod + distortion |
-| 😈 Demon | −7 | −4 | low + ring + distortion + reverb |
-| 👽 Alien | +3 | +5 | ring mod + vibrato |
-| 👻 Ghost | −3 | 0 | big reverb + echo + vibrato |
-| ☎️ Telephone | 0 | 0 | band-limited + bitcrush |
-| 📻 Radio | 0 | 0 | mid-forward + distortion |
-| 🕳️ Cave | −2 | 0 | huge reverb + echo |
+Browse them by category in the app — 46 in total:
 
-Dial in your own on the tabs and hit **💾 Save** to add it to the list.
+| Category | Voices |
+|---|---|
+| 👤 **Human** | Man, Woman, Kid, Baby, Deep, Old Man, Announcer |
+| 🐭 **Cartoon** | Chipmunk, **Minion**, Mouse, Helium, Duck, Parrot, Blue Elf, Sponge, Troll |
+| 🤖 **Sci-Fi** | Robot, Cyborg, AI Core, Alien, Dalek, Drone, Glitch, Comms |
+| 👻 **Horror** | Demon, Ghost, Giant, Goblin, Vampire, Zombie, Monster, Skeleton |
+| 🎬 **Famous** | Dark Lord, Green Ogre, Wizard, Pirate, Clown, Santa, Cowboy |
+| 🎚️ **FX** | Telephone, Radio, Cave, Hall, Underwater, Megaphone |
+| ⭐ **Custom** | Anything you dial in and **💾 Save** |
 
 ---
 
 ## 🎯 Tuning a realistic voice
 
-The ideal settings depend on **your own** voice, so treat presets as starting points and fine-tune on the **Voice** tab:
+The ideal settings depend on **your own** voice, so tweak on the **Voice** tab:
 
-- **👩 Woman** — if it sounds like "a man on helium", use **more Pitch, less Formant**. If it's cartoonish, drop the Formant. Typical: pitch **+5…+9**, formant **+2…+4**.
-- **🧒 Kid / 👶 Baby** — kids are mostly about **higher formants** (shorter vocal tract), not just pitch. Formant **+5…+9**, pitch **+9…+13**.
-- **🐭 Squeaky** — crank pitch to **+14…+22**, add formant **+6…+10** to keep it thin.
-- **🎈 Helium** — high formant (**+10…+12**) with only a little pitch (**+3…+5**) is the real helium physics.
+- **👩 Woman** — if it sounds like "a man on helium", use **more Pitch, less Formant**. Typical: pitch **+5…+9**, formant **+2…+4**.
+- **🧒 Kid / 👶 Baby** — kids are mostly about **higher formants** (shorter vocal tract): formant **+5…+9**, pitch **+9…+13**.
+- **🐭 High/squeaky** — pitch **+14…+22**, formant **+6…+10**.
 
-Keep **Preserve formants** on for natural results; turn it off for the classic chipmunk/robot effect.
+Keep **Preserve formants** on for natural results; off gives the classic chipmunk effect.
+
+> **Why does DSP still sound a bit processed?** Classic pitch/formant DSP always leaves some signature at large shifts. The truly *natural, hard-to-detect* route is **AI voice conversion** — planned as an opt-in engine (see roadmap); the integration point already exists in `ai_engine.py`.
 
 ---
 
@@ -158,29 +106,21 @@ Keep **Preserve formants** on for natural results; turn it off for the classic c
 
 | Shortcut | Action |
 |---|---|
-| `Ctrl+Alt+1…9` | Switch to preset 1–9 (in list order) |
+| `Ctrl+Alt+1…9` | Switch to preset 1–9 |
 | `Ctrl+Alt+0` | Toggle mute |
 
-Global hotkeys use the optional `keyboard` package (installed by `requirements.txt`); if it's missing the app still runs and just disables them.
+Global hotkeys use the optional `keyboard` package; if missing, the app still runs.
 
 ---
 
 ## 🧠 How it works
 
-The signal flows through a fixed chain, each stage a small block-based, NumPy/SciPy-vectorized effect:
-
 ```
-mic → noise gate → pitch/formant → EQ → distortion → bitcrusher
-    → ring mod → tremolo → vibrato → echo → reverb → volume → out
+mic → noise gate → [AI convert*] → pitch/formant → EQ → distortion → bitcrusher
+    → ring mod → tremolo → vibrato → echo → reverb → volume → out          (*planned)
 ```
 
-The core **pitch/formant shifter** is a phase vocoder:
-
-1. The signal is windowed into overlapping 1024-sample frames (87.5 % overlap) and FFT'd
-2. The **true** frequency of each bin is recovered from the phase difference between frames
-3. The **spectral envelope** (formants) is separated from the excitation by cepstral liftering
-4. Only the excitation is pitch-scaled; the envelope is re-applied — optionally **warped** by the formant slider — so pitch and timbre move independently
-5. Phases are re-accumulated with **rigid peak phase-locking** (bins of one harmonic stay coherent, which kills the "phasey / robotic" artifact), inverse-FFT'd and overlap-added back into a stream
+Each stage is a block-based, NumPy/SciPy-vectorized effect (≈12 % of the real-time CPU budget with everything on). The pitch/formant core is a phase vocoder that separates the formant envelope (cepstral liftering) from the excitation, shifts only the excitation, re-applies the envelope — optionally warped by the formant slider — and uses **rigid peak phase-locking** to keep harmonics coherent and kill most of the phasey/robotic artifact.
 
 ---
 
@@ -188,12 +128,14 @@ The core **pitch/formant shifter** is a phase vocoder:
 
 | File | What it is |
 |---|---|
-| `voxshift.py` | Audio engine (effect chain, presets, recording) + tabbed GUI |
-| `dsp.py` | All the DSP effect blocks |
-| `requirements.txt` | Dependencies |
-| `run.bat` | One-click install + launch |
+| `voxshift.py` | Audio engine, presets, recording + tabbed GUI |
+| `dsp.py` | All DSP effect blocks (pitch/formant, EQ, distortion, bitcrusher, ring/tremolo/vibrato, echo, reverb) |
+| `driver.py` | One-click VB-Cable virtual-mic installer |
+| `ai_engine.py` | Interface + stub for the future AI voice-conversion engine |
+| `setup.bat` / `run.bat` | One-click setup / launch |
+| `requirements.txt` · `requirements-ai.txt` | Core deps · optional AI stack |
 
-Recordings are saved to `~/VoxShift Recordings/`, custom presets to `~/.voxshift_presets.json`.
+Recordings → `~/VoxShift Recordings/` · custom presets → `~/.voxshift_presets.json`.
 
 ---
 
@@ -201,25 +143,25 @@ Recordings are saved to `~/VoxShift Recordings/`, custom presets to `~/.voxshift
 
 | Problem | Fix |
 |---|---|
-| **No sound / error on Start** | Make sure the input and output devices aren't the same, and that nothing else has the mic locked in exclusive mode. |
-| **Robotic / metallic on extreme settings** | Keep **Preserve formants** on; very large pitch shifts (±16+) are inherently thinner. |
-| **Latency too high** | It's ~35 ms by design; close other heavy audio apps if you hear more. |
-| **Hotkeys don't work** | `pip install keyboard`, then restart the app. |
-| **Discord doesn't hear me** | VoxShift must be **running with output = CABLE Input**, and Discord's mic set to **CABLE Output**. |
+| **No sound / error on Start** | Input and output must be different devices; close apps holding the mic in exclusive mode. |
+| **Still sounds a bit synthetic** | Keep **Preserve formants** on; extreme shifts (±16+) are inherently thinner. AI engine (roadmap) is the natural route. |
+| **Hotkeys don't work** | `pip install keyboard`, restart the app. |
+| **Discord can't hear me** | VoxShift must be **running** with output = `CABLE Input`, and Discord's mic = `CABLE Output`. |
+| **Driver install did nothing** | Accept the UAC prompt and click *Install Driver* in the VB-Cable window, then reboot. |
 
 ---
 
 ## 🗺️ Roadmap
 
-- [x] Independent formant shift, rigid phase-locking
-- [x] Full effect chain (EQ, distortion, bitcrusher, ring/tremolo/vibrato, echo, reverb)
-- [x] Record to WAV, custom presets, global hotkeys
-- [ ] Autotune / hard pitch-quantize
+- [x] 46 character presets in categories, custom presets, hotkeys, recording
+- [x] Independent formant shift, rigid phase-locking, full effect chain
+- [x] One-click virtual-mic (VB-Cable) installer
+- [ ] **AI voice conversion (RVC)** — natural, hard-to-detect voices on your GPU
+- [ ] Trained character models (per-voice) for the AI engine
 - [ ] Per-preset hotkey assignment in the UI
-- [ ] Bundled virtual-cable setup helper
 
 ---
 
 ## 📜 License
 
-[MIT](LICENSE) — do whatever you like, no warranty.
+[MIT](LICENSE). VB-Cable is a separate product by VB-Audio, installed from its official source, under its own licence.

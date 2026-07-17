@@ -20,6 +20,8 @@ import wave
 
 import numpy as np
 
+import ai_engine
+import driver
 import dsp
 
 SAMPLE_RATE = dsp.SAMPLE_RATE
@@ -43,35 +45,92 @@ DEFAULTS = {
     "gain": 1.0,
 }
 
-# built-in presets — each overrides a subset of DEFAULTS
+CATEGORIES = ["Human", "Cartoon", "Sci-Fi", "Horror", "Famous", "FX", "Custom"]
+
+# built-in presets — each overrides a subset of DEFAULTS. "cat" groups them in the UI.
 PRESETS = {
-    "Normal":    {"emoji": "🎤", "params": {}},
-    "Man":       {"emoji": "👨", "params": {"pitch": -4, "formant": -3, "eq_enabled": True, "eq_low": 4, "eq_high": -1}},
-    "Woman":     {"emoji": "👩", "params": {"pitch": 7, "formant": 3, "eq_enabled": True, "eq_low": -4, "eq_mid": 1, "eq_high": 4}},
-    "Kid":       {"emoji": "🧒", "params": {"pitch": 10, "formant": 5, "eq_enabled": True, "eq_low": -5, "eq_high": 4}},
-    "Baby":      {"emoji": "👶", "params": {"pitch": 12, "formant": 8, "eq_enabled": True, "eq_low": -7, "eq_high": 5}},
-    "Squeaky":   {"emoji": "🐭", "params": {"pitch": 16, "formant": 8, "eq_enabled": True, "eq_low": -8, "eq_high": 5}},
-    "Helium":    {"emoji": "🎈", "params": {"pitch": 4, "formant": 12, "eq_enabled": True, "eq_high": 3}},
-    "Deep":      {"emoji": "🎩", "params": {"pitch": -5, "formant": -2}},
-    "Chipmunk":  {"emoji": "🐿️", "params": {"pitch": 9, "preserve": False}},
-    "Robot":     {"emoji": "🤖", "params": {"ring_enabled": True, "ring_freq": 70, "ring_mix": 0.9,
-                                            "crush_enabled": True, "crush_bits": 6, "crush_downsample": 2, "crush_mix": 0.4}},
-    "Cyborg":    {"emoji": "🦾", "params": {"pitch": -2, "ring_enabled": True, "ring_freq": 110, "ring_mix": 0.5,
-                                            "dist_enabled": True, "dist_drive": 6, "dist_mix": 0.4}},
-    "Demon":     {"emoji": "😈", "params": {"pitch": -7, "formant": -4, "ring_enabled": True, "ring_freq": 35, "ring_mix": 0.4,
-                                            "dist_enabled": True, "dist_drive": 5, "dist_mix": 0.3, "reverb_enabled": True, "reverb_mix": 0.25}},
-    "Alien":     {"emoji": "👽", "params": {"pitch": 3, "formant": 5, "ring_enabled": True, "ring_freq": 130, "ring_mix": 0.4,
-                                            "vib_enabled": True, "vib_rate": 6, "vib_depth_ms": 2}},
-    "Ghost":     {"emoji": "👻", "params": {"pitch": -3, "reverb_enabled": True, "reverb_size": 0.85, "reverb_mix": 0.5,
-                                            "echo_enabled": True, "echo_time_ms": 300, "echo_feedback": 0.4, "echo_mix": 0.35,
-                                            "vib_enabled": True, "vib_rate": 4, "vib_depth_ms": 3}},
-    "Telephone": {"emoji": "☎️", "params": {"eq_enabled": True, "eq_low": -14, "eq_mid": 4, "eq_high": -10,
-                                            "crush_enabled": True, "crush_bits": 7, "crush_downsample": 2, "crush_mix": 0.5,
-                                            "dist_enabled": True, "dist_drive": 4, "dist_mix": 0.25}},
-    "Radio":     {"emoji": "📻", "params": {"eq_enabled": True, "eq_low": -6, "eq_mid": 5, "eq_high": -3,
-                                            "dist_enabled": True, "dist_drive": 6, "dist_mix": 0.4}},
-    "Cave":      {"emoji": "🕳️", "params": {"pitch": -2, "reverb_enabled": True, "reverb_size": 0.9, "reverb_damp": 0.6, "reverb_mix": 0.55,
-                                            "echo_enabled": True, "echo_time_ms": 220, "echo_feedback": 0.45, "echo_mix": 0.4}},
+    # ---- Human --------------------------------------------------------------
+    "Normal":    {"emoji": "🎤", "cat": "Human", "params": {}},
+    "Man":       {"emoji": "👨", "cat": "Human", "params": {"pitch": -4, "formant": -3, "eq_enabled": True, "eq_low": 4, "eq_high": -1}},
+    "Woman":     {"emoji": "👩", "cat": "Human", "params": {"pitch": 7, "formant": 3, "eq_enabled": True, "eq_low": -4, "eq_mid": 1, "eq_high": 4}},
+    "Kid":       {"emoji": "🧒", "cat": "Human", "params": {"pitch": 10, "formant": 5, "eq_enabled": True, "eq_low": -5, "eq_high": 4}},
+    "Baby":      {"emoji": "👶", "cat": "Human", "params": {"pitch": 12, "formant": 8, "eq_enabled": True, "eq_low": -7, "eq_high": 5}},
+    "Deep":      {"emoji": "🎩", "cat": "Human", "params": {"pitch": -5, "formant": -2}},
+    "Old Man":   {"emoji": "👴", "cat": "Human", "params": {"pitch": -2, "formant": -1, "trem_enabled": True, "trem_rate": 5.5, "trem_depth": 0.16,
+                                                            "dist_enabled": True, "dist_drive": 3, "dist_mix": 0.15}},
+    "Announcer": {"emoji": "🎙️", "cat": "Human", "params": {"pitch": -2, "formant": -1, "eq_enabled": True, "eq_low": 4, "eq_mid": 1, "eq_high": 3,
+                                                            "reverb_enabled": True, "reverb_size": 0.3, "reverb_mix": 0.12}},
+    # ---- Cartoon ------------------------------------------------------------
+    "Chipmunk":  {"emoji": "🐿️", "cat": "Cartoon", "params": {"pitch": 9, "preserve": False}},
+    "Minion":    {"emoji": "🍌", "cat": "Cartoon", "params": {"pitch": 9, "formant": 7, "eq_enabled": True, "eq_high": 3,
+                                                             "trem_enabled": True, "trem_rate": 8, "trem_depth": 0.18}},
+    "Mouse":     {"emoji": "🐭", "cat": "Cartoon", "params": {"pitch": 17, "formant": 7, "eq_enabled": True, "eq_low": -8, "eq_high": 5}},
+    "Helium":    {"emoji": "🎈", "cat": "Cartoon", "params": {"pitch": 4, "formant": 12, "eq_enabled": True, "eq_high": 3}},
+    "Duck":      {"emoji": "🦆", "cat": "Cartoon", "params": {"pitch": 3, "formant": 5, "ring_enabled": True, "ring_freq": 220, "ring_mix": 0.32,
+                                                             "eq_enabled": True, "eq_mid": 5, "dist_enabled": True, "dist_drive": 4, "dist_mix": 0.3}},
+    "Parrot":    {"emoji": "🦜", "cat": "Cartoon", "params": {"pitch": 8, "formant": 5, "trem_enabled": True, "trem_rate": 7, "trem_depth": 0.22}},
+    "Blue Elf":  {"emoji": "🔵", "cat": "Cartoon", "params": {"pitch": 7, "formant": 5}},
+    "Sponge":    {"emoji": "🧽", "cat": "Cartoon", "params": {"pitch": 6, "formant": 6, "eq_enabled": True, "eq_mid": 3,
+                                                             "trem_enabled": True, "trem_rate": 6, "trem_depth": 0.12}},
+    "Troll":     {"emoji": "👹", "cat": "Cartoon", "params": {"pitch": -6, "formant": -5, "dist_enabled": True, "dist_drive": 5, "dist_mix": 0.3,
+                                                             "eq_enabled": True, "eq_low": 4}},
+    # ---- Sci-Fi -------------------------------------------------------------
+    "Robot":     {"emoji": "🤖", "cat": "Sci-Fi", "params": {"ring_enabled": True, "ring_freq": 70, "ring_mix": 0.9,
+                                                            "crush_enabled": True, "crush_bits": 6, "crush_downsample": 2, "crush_mix": 0.4}},
+    "Cyborg":    {"emoji": "🦾", "cat": "Sci-Fi", "params": {"pitch": -2, "ring_enabled": True, "ring_freq": 110, "ring_mix": 0.5,
+                                                            "dist_enabled": True, "dist_drive": 6, "dist_mix": 0.4}},
+    "AI Core":   {"emoji": "🧠", "cat": "Sci-Fi", "params": {"ring_enabled": True, "ring_freq": 90, "ring_mix": 0.22,
+                                                            "reverb_enabled": True, "reverb_size": 0.2, "reverb_mix": 0.1, "eq_enabled": True, "eq_high": 2}},
+    "Alien":     {"emoji": "👽", "cat": "Sci-Fi", "params": {"pitch": 3, "formant": 5, "ring_enabled": True, "ring_freq": 130, "ring_mix": 0.4,
+                                                            "vib_enabled": True, "vib_rate": 6, "vib_depth_ms": 2}},
+    "Dalek":     {"emoji": "🛸", "cat": "Sci-Fi", "params": {"pitch": -2, "ring_enabled": True, "ring_freq": 30, "ring_mix": 0.85,
+                                                            "dist_enabled": True, "dist_drive": 5, "dist_mix": 0.4}},
+    "Drone":     {"emoji": "🛰️", "cat": "Sci-Fi", "params": {"crush_enabled": True, "crush_bits": 5, "crush_downsample": 3, "crush_mix": 0.6,
+                                                            "ring_enabled": True, "ring_freq": 60, "ring_mix": 0.4}},
+    "Glitch":    {"emoji": "📺", "cat": "Sci-Fi", "params": {"crush_enabled": True, "crush_bits": 4, "crush_downsample": 4, "crush_mix": 0.7,
+                                                            "dist_enabled": True, "dist_drive": 6, "dist_mix": 0.4, "ring_enabled": True, "ring_freq": 200, "ring_mix": 0.3}},
+    "Comms":     {"emoji": "📡", "cat": "Sci-Fi", "params": {"eq_enabled": True, "eq_low": -14, "eq_mid": 4, "eq_high": -8,
+                                                            "crush_enabled": True, "crush_bits": 7, "crush_downsample": 2, "crush_mix": 0.4,
+                                                            "dist_enabled": True, "dist_drive": 4, "dist_mix": 0.3}},
+    # ---- Horror -------------------------------------------------------------
+    "Demon":     {"emoji": "😈", "cat": "Horror", "params": {"pitch": -7, "formant": -4, "ring_enabled": True, "ring_freq": 35, "ring_mix": 0.4,
+                                                            "dist_enabled": True, "dist_drive": 5, "dist_mix": 0.3, "reverb_enabled": True, "reverb_mix": 0.25}},
+    "Ghost":     {"emoji": "👻", "cat": "Horror", "params": {"pitch": -3, "reverb_enabled": True, "reverb_size": 0.85, "reverb_mix": 0.5,
+                                                            "echo_enabled": True, "echo_time_ms": 300, "echo_feedback": 0.4, "echo_mix": 0.35,
+                                                            "vib_enabled": True, "vib_rate": 4, "vib_depth_ms": 3}},
+    "Giant":     {"emoji": "🗿", "cat": "Horror", "params": {"pitch": -8, "formant": -6, "reverb_enabled": True, "reverb_size": 0.7, "reverb_mix": 0.3}},
+    "Goblin":    {"emoji": "👺", "cat": "Horror", "params": {"pitch": -3, "formant": -4, "dist_enabled": True, "dist_drive": 5, "dist_mix": 0.35,
+                                                            "ring_enabled": True, "ring_freq": 160, "ring_mix": 0.25}},
+    "Vampire":   {"emoji": "🧛", "cat": "Horror", "params": {"pitch": -3, "formant": -2, "reverb_enabled": True, "reverb_size": 0.5, "reverb_mix": 0.2}},
+    "Zombie":    {"emoji": "🧟", "cat": "Horror", "params": {"pitch": -4, "formant": -3, "dist_enabled": True, "dist_drive": 4, "dist_mix": 0.3,
+                                                            "trem_enabled": True, "trem_rate": 3, "trem_depth": 0.3}},
+    "Monster":   {"emoji": "👹", "cat": "Horror", "params": {"pitch": -9, "formant": -5, "dist_enabled": True, "dist_drive": 6, "dist_mix": 0.4,
+                                                            "ring_enabled": True, "ring_freq": 45, "ring_mix": 0.3}},
+    "Skeleton":  {"emoji": "💀", "cat": "Horror", "params": {"pitch": -1, "crush_enabled": True, "crush_bits": 6, "crush_downsample": 2, "crush_mix": 0.5,
+                                                            "dist_enabled": True, "dist_drive": 3, "dist_mix": 0.2}},
+    # ---- Famous (archetypes) ------------------------------------------------
+    "Dark Lord": {"emoji": "🖤", "cat": "Famous", "params": {"pitch": -4, "formant": -3, "dist_enabled": True, "dist_drive": 3, "dist_mix": 0.2,
+                                                            "reverb_enabled": True, "reverb_size": 0.4, "reverb_mix": 0.18, "eq_enabled": True, "eq_low": 3}},
+    "Green Ogre":{"emoji": "🟢", "cat": "Famous", "params": {"pitch": -3, "formant": -2, "eq_enabled": True, "eq_low": 3}},
+    "Wizard":    {"emoji": "🧙", "cat": "Famous", "params": {"pitch": -2, "reverb_enabled": True, "reverb_size": 0.5, "reverb_mix": 0.25,
+                                                            "echo_enabled": True, "echo_time_ms": 250, "echo_feedback": 0.3, "echo_mix": 0.2}},
+    "Pirate":    {"emoji": "🏴", "cat": "Famous", "params": {"pitch": -3, "formant": -2, "dist_enabled": True, "dist_drive": 3, "dist_mix": 0.2}},
+    "Clown":     {"emoji": "🤡", "cat": "Famous", "params": {"pitch": 5, "formant": 4, "trem_enabled": True, "trem_rate": 6, "trem_depth": 0.2}},
+    "Santa":     {"emoji": "🎅", "cat": "Famous", "params": {"pitch": -3, "formant": -2, "reverb_enabled": True, "reverb_size": 0.35, "reverb_mix": 0.15}},
+    "Cowboy":    {"emoji": "🤠", "cat": "Famous", "params": {"pitch": -2, "eq_enabled": True, "eq_low": 2}},
+    # ---- FX / places --------------------------------------------------------
+    "Telephone": {"emoji": "☎️", "cat": "FX", "params": {"eq_enabled": True, "eq_low": -14, "eq_mid": 4, "eq_high": -10,
+                                                         "crush_enabled": True, "crush_bits": 7, "crush_downsample": 2, "crush_mix": 0.5,
+                                                         "dist_enabled": True, "dist_drive": 4, "dist_mix": 0.25}},
+    "Radio":     {"emoji": "📻", "cat": "FX", "params": {"eq_enabled": True, "eq_low": -6, "eq_mid": 5, "eq_high": -3,
+                                                         "dist_enabled": True, "dist_drive": 6, "dist_mix": 0.4}},
+    "Cave":      {"emoji": "🕳️", "cat": "FX", "params": {"pitch": -2, "reverb_enabled": True, "reverb_size": 0.9, "reverb_damp": 0.6, "reverb_mix": 0.55,
+                                                         "echo_enabled": True, "echo_time_ms": 220, "echo_feedback": 0.45, "echo_mix": 0.4}},
+    "Hall":      {"emoji": "🏛️", "cat": "FX", "params": {"reverb_enabled": True, "reverb_size": 0.75, "reverb_damp": 0.3, "reverb_mix": 0.4}},
+    "Underwater":{"emoji": "🌊", "cat": "FX", "params": {"eq_enabled": True, "eq_low": 4, "eq_high": -14, "vib_enabled": True, "vib_rate": 3, "vib_depth_ms": 4,
+                                                         "reverb_enabled": True, "reverb_size": 0.5, "reverb_mix": 0.3}},
+    "Megaphone": {"emoji": "📢", "cat": "FX", "params": {"eq_enabled": True, "eq_low": -10, "eq_mid": 6, "eq_high": -6,
+                                                         "dist_enabled": True, "dist_drive": 7, "dist_mix": 0.5}},
 }
 
 BUILTIN_NAMES = set(PRESETS)
@@ -84,6 +143,7 @@ def load_user_presets():
         for name, p in data.items():
             p.setdefault("emoji", "⭐")
             p.setdefault("params", {})
+            p["cat"] = "Custom"
             PRESETS[name] = p
     except (FileNotFoundError, json.JSONDecodeError, OSError):
         pass
@@ -115,6 +175,10 @@ class Engine:
         # order matters: clean -> pitch -> tone -> modulation -> space
         self.chain = [self.gate, self.shifter, self.eq, self.dist, self.crush,
                       self.ring, self.trem, self.vib, self.echo, self.reverb]
+
+        # optional neural voice-conversion stage (pass-through until a model
+        # is installed — see ai_engine.py). Runs right after the noise gate.
+        self.ai = ai_engine.NullConverter()
 
         self.gain = 1.0
         self.muted = False
@@ -172,7 +236,9 @@ class Engine:
         x = indata[:, 0].astype(np.float64)
         self.level_in = float(np.sqrt(np.mean(x * x)))
         with self.lock:
-            for eff in self.chain:
+            x = self.gate.process(x)
+            x = self.ai.process(x, SAMPLE_RATE)
+            for eff in self.chain[1:]:  # gate already applied above
                 x = eff.process(x)
             g = 0.0 if self.muted else self.gain
         y = np.clip(x * g, -1.0, 1.0)
@@ -274,8 +340,29 @@ def main():
     vmsg = ("virtual cable detected — pick its 'Output' side as the mic in Discord"
             if virtual_out else
             "no virtual cable — output goes to your speakers/headphones (install VB-Cable to use in Discord)")
-    ctk.CTkLabel(dev_frame, text=vmsg, text_color=("#4a9d5b" if virtual_out else "#c98a3a"),
-                 font=ctk.CTkFont(size=11)).grid(row=4, column=0, sticky="w", padx=12, pady=(0, 8))
+    cable_lbl = ctk.CTkLabel(dev_frame, text=vmsg, text_color=("#4a9d5b" if virtual_out else "#c98a3a"),
+                             font=ctk.CTkFont(size=11))
+    cable_lbl.grid(row=4, column=0, sticky="w", padx=12, pady=(0, 2))
+
+    if not virtual_out:
+        def setup_driver():
+            drv_btn.configure(state="disabled", text="installing…")
+
+            def report(msg, color="#c9a33a"):
+                app.after(0, lambda: cable_lbl.configure(text=msg, text_color=color))
+
+            def work():
+                try:
+                    driver.install_cable(log=lambda m: report(m))
+                    report("installer launched — click 'Install Driver', reboot, then restart VoxShift", "#4a9d5b")
+                except Exception as exc:
+                    report(f"install failed: {exc}", "#e05f5f")
+                app.after(0, lambda: drv_btn.configure(state="normal", text="🎚 Set up virtual mic (VB-Cable)"))
+            threading.Thread(target=work, daemon=True).start()
+
+        drv_btn = ctk.CTkButton(dev_frame, text="🎚 Set up virtual mic (VB-Cable)", height=28,
+                                command=setup_driver)
+        drv_btn.grid(row=5, column=0, sticky="w", padx=12, pady=(0, 8))
 
     try:
         default_in, default_out = sd.default.device
@@ -291,53 +378,102 @@ def main():
     except Exception:
         pass
 
-    # --- presets -----------------------------------------------------------
+    # --- presets (categorised browser) -------------------------------------
     preset_frame = ctk.CTkFrame(app)
     preset_frame.pack(fill="x", padx=16, pady=6)
-    prow = ctk.CTkFrame(preset_frame, fg_color="transparent")
-    prow.pack(fill="x", padx=12, pady=(8, 4))
-    ctk.CTkLabel(prow, text="Preset").pack(side="left", padx=(0, 8))
 
-    preset_names = lambda: [f"{p['emoji']} {n}" for n, p in PRESETS.items()]
-    preset_menu = ctk.CTkOptionMenu(prow, values=preset_names(), width=220, command=lambda v: select_preset(v.split(" ", 1)[1]))
-    preset_menu.pack(side="left")
+    current = {"preset": "Normal", "cat": "Human"}
+    preset_buttons = {}
+    cat_buttons = {}
+
+    cat_row = ctk.CTkFrame(preset_frame, fg_color="transparent")
+    cat_row.pack(fill="x", padx=10, pady=(8, 2))
+
+    grid_holder = ctk.CTkScrollableFrame(preset_frame, height=110, fg_color="transparent")
+    grid_holder.pack(fill="x", padx=8, pady=(0, 4))
+
+    def presets_in_cat(cat):
+        return [n for n, p in PRESETS.items() if p.get("cat", "Custom") == cat]
+
+    def highlight_active():
+        for n, b in preset_buttons.items():
+            on = (n == current["preset"])
+            b.configure(fg_color="#1F6AA5" if on else "#333333",
+                        hover_color="#144870" if on else "#3d3d3d")
+
+    def build_grid():
+        for w in grid_holder.winfo_children():
+            w.destroy()
+        preset_buttons.clear()
+        names = presets_in_cat(current["cat"])
+        if not names:
+            ctk.CTkLabel(grid_holder, text="(empty — dial in a voice and press 💾 Save)",
+                         text_color="gray50").pack(pady=10)
+        row_f = None
+        for i, n in enumerate(names):
+            if i % 4 == 0:
+                row_f = ctk.CTkFrame(grid_holder, fg_color="transparent")
+                row_f.pack(fill="x")
+            p = PRESETS[n]
+            b = ctk.CTkButton(row_f, text=f"{p['emoji']} {n}", width=132, height=30,
+                              fg_color="#333333", hover_color="#3d3d3d",
+                              command=lambda nm=n: select_preset(nm))
+            b.pack(side="left", padx=3, pady=3)
+            preset_buttons[n] = b
+        highlight_active()
+
+    def set_category(cat):
+        current["cat"] = cat
+        for c, btn in cat_buttons.items():
+            btn.configure(fg_color="#1F6AA5" if c == cat else "transparent")
+        build_grid()
+
+    for c in CATEGORIES:
+        b = ctk.CTkButton(cat_row, text=c, width=74, height=26, fg_color="transparent",
+                          command=lambda cc=c: set_category(cc))
+        b.pack(side="left", padx=2)
+        cat_buttons[c] = b
 
     def select_preset(name):
         if name not in PRESETS:
             return
         engine.apply(PRESETS[name]["params"])
-        preset_menu.set(f"{PRESETS[name]['emoji']} {name}")
+        current["preset"] = name
+        cat = PRESETS[name].get("cat", "Custom")
+        if cat != current["cat"]:
+            set_category(cat)
+        else:
+            highlight_active()
         refresh_controls()
 
     srow = ctk.CTkFrame(preset_frame, fg_color="transparent")
-    srow.pack(fill="x", padx=12, pady=(0, 8))
-    name_entry = ctk.CTkEntry(srow, placeholder_text="name to save current settings", width=300)
+    srow.pack(fill="x", padx=12, pady=(2, 8))
+    name_entry = ctk.CTkEntry(srow, placeholder_text="name to save current settings", width=280)
     name_entry.pack(side="left")
 
     def save_current():
         name = name_entry.get().strip()
         if not name or name in BUILTIN_NAMES:
             return
-        PRESETS[name] = {"emoji": "⭐", "params": engine.snapshot()}
+        PRESETS[name] = {"emoji": "⭐", "cat": "Custom", "params": engine.snapshot()}
         save_user_presets()
         name_entry.delete(0, "end")
-        preset_menu.configure(values=preset_names())
-        preset_menu.set(f"⭐ {name}")
+        current["preset"] = name
+        set_category("Custom")
         register_hotkeys()
 
     def delete_current():
-        label = preset_menu.get()
-        name = label.split(" ", 1)[1] if " " in label else label
+        name = current["preset"]
         if name in BUILTIN_NAMES or name not in PRESETS:
             return
         del PRESETS[name]
         save_user_presets()
-        preset_menu.configure(values=preset_names())
         select_preset("Normal")
+        build_grid()
         register_hotkeys()
 
-    ctk.CTkButton(srow, text="💾 Save", width=80, command=save_current).pack(side="left", padx=6)
-    ctk.CTkButton(srow, text="🗑 Delete", width=80, fg_color="#7a3a3a", hover_color="#8a3232",
+    ctk.CTkButton(srow, text="💾 Save", width=76, command=save_current).pack(side="left", padx=6)
+    ctk.CTkButton(srow, text="🗑 Delete", width=84, fg_color="#7a3a3a", hover_color="#8a3232",
                   command=delete_current).pack(side="left")
 
     # --- effect tabs -------------------------------------------------------
@@ -509,6 +645,7 @@ def main():
                          text_color="#e0a24a" if engine.muted else "gray60")
 
     register_hotkeys()
+    set_category("Human")
     select_preset("Normal")
 
     def poll_meters():

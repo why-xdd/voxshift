@@ -1,0 +1,8 @@
+# Optional AI voice-conversion stack — the "natural / undetectable" path.
+# Large download and needs an NVIDIA GPU. Install the CUDA build of torch that
+# matches your GPU from https://pytorch.org, for example:
+#   pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121
+torch
+torchaudio
+onnxruntime-gpu
+faiss-cpu

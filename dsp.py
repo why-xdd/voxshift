@@ -56,6 +56,7 @@ class PitchFormantShifter:
         self.formant = 0.0     # semitones (envelope shift)
         self.preserve = True
         self.lock_mode = "rigid"  # "rigid" phase-locking or "none"
+        self.transient_preserve = False  # experimental onset phase reset (off: hurt quality here)
         self.reset()
 
     def reset(self):
@@ -68,6 +69,8 @@ class PitchFormantShifter:
         self.env_in = 0.0
         self.env_out = 0.0
         self.level_gain = 1.0
+        self.prev_mag = np.zeros(self.bins)
+        self.flux_avg = 0.0
 
     def _envelope(self, mag):
         log_mag = np.log(mag + 1e-9)
@@ -135,7 +138,21 @@ class PitchFormantShifter:
                 warped = env
             new_mag = new_mag * warped
 
+        # transient detection via spectral flux — on an onset (consonant), reset
+        # the synthesis phase to the (shifted) analysis phase so the attack stays
+        # sharp instead of smearing into the "robotic mush" the vocoder produces
+        transient = False
+        if self.transient_preserve:
+            flux = float(np.sum(np.maximum(0.0, mag - self.prev_mag)))
+            self.prev_mag = mag
+            if flux > 3.0 * self.flux_avg and flux > 5e-3:
+                transient = True
+            self.flux_avg = 0.9 * self.flux_avg + 0.1 * flux
+
         self.sum_phase += 2.0 * np.pi * new_freq / self.freq_per_bin / self.osamp
+        if transient:
+            src_bins = np.clip((self._bin_idx / ratio).astype(np.int64), 0, self.bins - 1)
+            self.sum_phase = phase[src_bins].copy()
         synth_phase = self._locked_phase(new_mag)
         frame = np.fft.irfft(new_mag * np.exp(1j * synth_phase))
         frame *= self.window / self.ola_gain
