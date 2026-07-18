@@ -721,9 +721,20 @@ def main():
     set_category("Human")
     select_preset("Normal")
 
+    sig_hint = ctk.CTkLabel(app, text="", text_color="#c98a3a", font=ctk.CTkFont(size=11))
+    sig_hint.pack(pady=(0, 4))
+    silent_polls = {"n": 0}
+
     def poll_meters():
         in_meter.set(min(1.0, engine.level_in * 4))
         out_meter.set(min(1.0, engine.level_out * 4))
+        if engine.stream is not None:
+            silent_polls["n"] = silent_polls["n"] + 1 if engine.level_in < 0.002 else 0
+            sig_hint.configure(text="⚠ no signal from this microphone — pick your real mic above"
+                               if silent_polls["n"] > 40 else "")
+        else:
+            sig_hint.configure(text="")
+            silent_polls["n"] = 0
         app.after(50, poll_meters)
     poll_meters()
 
