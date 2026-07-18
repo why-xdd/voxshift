@@ -28,6 +28,7 @@ presets** in categories, global hotkeys, recording, and one-click virtual-mic se
 | 🎛️ **Full effect chain** | 3-band EQ · distortion · bitcrusher · ring mod · tremolo · vibrato · echo · reverb · noise gate |
 | 🔌 **One-click virtual mic** | Installs the VB-Cable driver for you so the voice works as a mic in Discord/games out of the box |
 | ⌨️ **Global hotkeys** | Switch presets & mute without leaving your game or call |
+| 🎧 **Hear yourself** | A monitor toggle plays the result to your headphones so you can test voices — even while the main output feeds Discord |
 | 🔴 **Record to WAV** | Capture the changed voice, with or without a cable |
 | 🧠 **AI path (planned)** | Scaffold in place for neural voice conversion (RVC) — the truly natural / undetectable route |
 
@@ -64,6 +65,13 @@ To make *any* program's audio appear as a **microphone**, Windows needs a **virt
 - Then in VoxShift set **output = `CABLE Input`**, and in Discord/the game set the **microphone = `CABLE Output`**.
 
 Without a cable you can still **monitor** through your headphones and **record** to a `.wav`.
+
+### 🎧 Hearing yourself (testing voices)
+
+Turn on **🎧 Hear myself (monitor)** and set its device to the headphones/speakers you actually
+listen on. VoxShift then plays the processed voice to that device — so you can test presets live,
+even when the main **Output** is routed to a virtual cable for Discord. (It skips monitoring if
+the monitor device is the same as the main output, to avoid doubled sound.)
 
 > ### 😱 "Installing the cable killed my microphone!"
 > Common, and **not a fault**. The installer sets `CABLE Output` as your *default* recording device, so apps that use the default mic hear silence. **Fix:** *Settings → System → Sound* → set your **real microphone** back as the default input, and only pick `CABLE Output` *inside Discord*. Your mic keeps working everywhere else.

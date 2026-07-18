@@ -17,6 +17,7 @@ import json
 import os
 import threading
 import wave
+from collections import deque
 
 import numpy as np
 
@@ -187,6 +188,11 @@ class Engine:
         self.stream = None
         self.lock = threading.Lock()
 
+        # separate "hear yourself" monitor stream (to your headphones) fed from
+        # the main callback through a small queue
+        self.monitor_stream = None
+        self.mon_q = deque(maxlen=32)
+
         self.recording = False
         self._rec_frames = []
 
@@ -245,7 +251,37 @@ class Engine:
         self.level_out = float(np.sqrt(np.mean(y * y)))
         if self.recording:
             self._rec_frames.append(y.copy())
-        outdata[:, 0] = y.astype(np.float32)
+        yf = y.astype(np.float32)
+        if self.monitor_stream is not None:
+            self.mon_q.append(yf.copy())
+        outdata[:, 0] = yf
+
+    def monitor_callback(self, outdata, frames, time_info, status):
+        try:
+            blk = self.mon_q.popleft()
+        except IndexError:
+            outdata.fill(0.0)
+            return
+        n = min(len(blk), frames)
+        outdata[:n, 0] = blk[:n]
+        if n < frames:
+            outdata[n:, 0] = 0.0
+
+    def start_monitor(self, device):
+        import sounddevice as sd
+        self.stop_monitor()
+        self.mon_q.clear()
+        self.monitor_stream = sd.OutputStream(
+            samplerate=SAMPLE_RATE, blocksize=BLOCK_SIZE, device=device,
+            channels=1, dtype="float32", callback=self.monitor_callback)
+        self.monitor_stream.start()
+
+    def stop_monitor(self):
+        if self.monitor_stream is not None:
+            self.monitor_stream.stop()
+            self.monitor_stream.close()
+            self.monitor_stream = None
+        self.mon_q.clear()
 
     def start(self, input_device, output_device):
         import sounddevice as sd
@@ -264,6 +300,7 @@ class Engine:
             self.stream.stop()
             self.stream.close()
             self.stream = None
+        self.stop_monitor()
         self.level_in = self.level_out = 0.0
 
     def start_recording(self):
@@ -364,6 +401,7 @@ def main():
                                 command=setup_driver)
         drv_btn.grid(row=5, column=0, sticky="w", padx=12, pady=(0, 8))
 
+    default_out = None
     try:
         default_in, default_out = sd.default.device
         for label, i in inputs.items():
@@ -377,6 +415,40 @@ def main():
                     out_box.set(label)
     except Exception:
         pass
+
+    # --- monitor ("hear yourself") -----------------------------------------
+    mon_frame = ctk.CTkFrame(app)
+    mon_frame.pack(fill="x", padx=16, pady=(0, 6))
+    monitor_var = ctk.BooleanVar(value=True)
+    mon_top = ctk.CTkFrame(mon_frame, fg_color="transparent")
+    mon_top.pack(fill="x", padx=12, pady=(8, 0))
+    ctk.CTkSwitch(mon_top, text="🎧 Hear myself (monitor)", variable=monitor_var,
+                  command=lambda: update_monitor()).pack(side="left")
+    ctk.CTkLabel(mon_frame, text="…through the headphones/speakers you actually listen on:",
+                 text_color="gray60", font=ctk.CTkFont(size=11)).pack(anchor="w", padx=12, pady=(2, 0))
+    mon_box = ctk.CTkComboBox(mon_frame, values=list(outputs), width=560, command=lambda _v: update_monitor())
+    mon_box.pack(padx=12, pady=(2, 10))
+    if outputs:
+        mon_box.set(next((l for l, i in outputs.items() if i == default_out), list(outputs)[0]))
+
+    def update_monitor():
+        # play the processed voice to a second device so you hear yourself even
+        # when the main Output goes to a virtual cable (skip if same device)
+        if engine.stream is None:
+            return
+        try:
+            mdev = outputs[mon_box.get()]
+        except KeyError:
+            engine.stop_monitor()
+            return
+        same = mdev == outputs.get(out_box.get())
+        if monitor_var.get() and not same:
+            try:
+                engine.start_monitor(mdev)
+            except Exception as exc:
+                status.configure(text=f"monitor error: {exc}", text_color="#e05f5f")
+        else:
+            engine.stop_monitor()
 
     # --- presets (categorised browser) -------------------------------------
     preset_frame = ctk.CTkFrame(app)
@@ -603,6 +675,7 @@ def main():
             latency_ms = 1000 * (engine.shifter.n + BLOCK_SIZE) / SAMPLE_RATE
             hint = "  ·  Ctrl+Alt+1…9 presets" if HAVE_KEYBOARD else ""
             status.configure(text=f"running · ~{latency_ms:.0f} ms latency{hint}", text_color="gray60")
+            update_monitor()
         else:
             engine.stop()
             start_btn.configure(text="▶  Start", fg_color=["#3B8ED0", "#1F6AA5"], hover_color=["#36719F", "#144870"])
