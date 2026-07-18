@@ -346,11 +346,15 @@ def main():
 
     app = ctk.CTk()
     app.title("VoxShift")
-    app.geometry("620x860")
-    app.minsize(620, 700)
+    app.geometry("620x880")
+    app.minsize(600, 560)
 
-    ctk.CTkLabel(app, text="VoxShift", font=ctk.CTkFont(size=26, weight="bold")).pack(pady=(12, 0))
+    ctk.CTkLabel(app, text="VoxShift", font=ctk.CTkFont(size=26, weight="bold")).pack(pady=(10, 0))
     ctk.CTkLabel(app, text="real-time voice changer", text_color="gray60").pack()
+
+    # scrollable settings area so everything is reachable on any screen size;
+    # the transport bar (Start/Rec) is pinned to the bottom outside the scroll.
+    content = ctk.CTkScrollableFrame(app, fg_color="transparent")  # packed after the bottom bar
 
     # --- devices -----------------------------------------------------------
     devices = sd.query_devices()
@@ -362,7 +366,7 @@ def main():
     inputs = {device_label(i, d): i for i, d in enumerate(devices) if d["max_input_channels"] > 0}
     outputs = {device_label(i, d): i for i, d in enumerate(devices) if d["max_output_channels"] > 0}
 
-    dev_frame = ctk.CTkFrame(app)
+    dev_frame = ctk.CTkFrame(content)
     dev_frame.pack(fill="x", padx=16, pady=(10, 6))
     ctk.CTkLabel(dev_frame, text="Microphone (input)").grid(row=0, column=0, sticky="w", padx=12, pady=(8, 0))
     in_box = ctk.CTkComboBox(dev_frame, values=list(inputs), width=560)
@@ -417,7 +421,7 @@ def main():
         pass
 
     # --- monitor ("hear yourself") -----------------------------------------
-    mon_frame = ctk.CTkFrame(app)
+    mon_frame = ctk.CTkFrame(content)
     mon_frame.pack(fill="x", padx=16, pady=(0, 6))
     monitor_var = ctk.BooleanVar(value=True)
     mon_top = ctk.CTkFrame(mon_frame, fg_color="transparent")
@@ -451,7 +455,7 @@ def main():
             engine.stop_monitor()
 
     # --- presets (categorised browser) -------------------------------------
-    preset_frame = ctk.CTkFrame(app)
+    preset_frame = ctk.CTkFrame(content)
     preset_frame.pack(fill="x", padx=16, pady=6)
 
     current = {"preset": "Normal", "cat": "Human"}
@@ -549,7 +553,7 @@ def main():
                   command=delete_current).pack(side="left")
 
     # --- effect tabs -------------------------------------------------------
-    tabs = ctk.CTkTabview(app, height=300)
+    tabs = ctk.CTkTabview(content, height=230)
     tabs.pack(fill="both", expand=True, padx=16, pady=6)
     for t in ("Voice", "Tone", "Modulation", "Space"):
         tabs.add(t)
@@ -648,21 +652,25 @@ def main():
         for r in controls:
             r()
 
-    # --- meters + transport ------------------------------------------------
-    meter_frame = ctk.CTkFrame(app)
-    meter_frame.pack(fill="x", padx=16, pady=(6, 4))
-    ctk.CTkLabel(meter_frame, text="In").grid(row=0, column=0, padx=(12, 6), pady=(10, 2))
+    # --- meters + transport (pinned to the bottom so Start is ALWAYS visible)
+    bottom = ctk.CTkFrame(app, fg_color="transparent")
+    bottom.pack(side="bottom", fill="x")
+    content.pack(side="top", fill="both", expand=True)  # scroll area fills the middle
+
+    meter_frame = ctk.CTkFrame(bottom)
+    meter_frame.pack(fill="x", padx=16, pady=(4, 4))
+    ctk.CTkLabel(meter_frame, text="In").grid(row=0, column=0, padx=(12, 6), pady=(8, 2))
     in_meter = ctk.CTkProgressBar(meter_frame, width=490)
-    in_meter.grid(row=0, column=1, pady=(10, 2))
-    ctk.CTkLabel(meter_frame, text="Out").grid(row=1, column=0, padx=(12, 6), pady=(0, 10))
+    in_meter.grid(row=0, column=1, pady=(8, 2))
+    ctk.CTkLabel(meter_frame, text="Out").grid(row=1, column=0, padx=(12, 6), pady=(0, 8))
     out_meter = ctk.CTkProgressBar(meter_frame, width=490)
-    out_meter.grid(row=1, column=1, pady=(0, 10))
+    out_meter.grid(row=1, column=1, pady=(0, 8))
     in_meter.set(0); out_meter.set(0)
 
-    status = ctk.CTkLabel(app, text="stopped", text_color="gray60")
+    status = ctk.CTkLabel(bottom, text="stopped", text_color="gray60")
 
-    transport = ctk.CTkFrame(app, fg_color="transparent")
-    transport.pack(fill="x", padx=16, pady=(4, 2))
+    transport = ctk.CTkFrame(bottom, fg_color="transparent")
+    transport.pack(fill="x", padx=16, pady=(2, 2))
 
     def toggle():
         if engine.stream is None:
@@ -721,8 +729,8 @@ def main():
     set_category("Human")
     select_preset("Normal")
 
-    sig_hint = ctk.CTkLabel(app, text="", text_color="#c98a3a", font=ctk.CTkFont(size=11))
-    sig_hint.pack(pady=(0, 4))
+    sig_hint = ctk.CTkLabel(bottom, text="", text_color="#c98a3a", font=ctk.CTkFont(size=11))
+    sig_hint.pack(pady=(0, 6))
     silent_polls = {"n": 0}
 
     def poll_meters():
