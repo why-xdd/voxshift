@@ -3,3 +3,9 @@ __pycache__/
 .venv/
 .omc/
 .voxshift_presets.json
+
+# AI / RVC assets (large, downloaded — not committed)
+models/
+*.onnx
+*.wav
+*.index
